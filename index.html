@@ -1,0 +1,693 @@
+/<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizzVerde – Projeto Crisoverde</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green-light: #8fde3c;
+    --green-mid: #5aaa1e;
+    --green-dark: #2d6b10;
+    --yellow: #f9e44a;
+    --orange: #f7a832;
+    --red: #f23c3c;
+    --bg: #a2e83a;
+    --white: #ffffff;
+    --card-bg: #ffffff;
+    --grid: rgba(255,255,255,0.25);
+    --shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .quiz-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 820px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card-bg);
+    border-radius: 22px;
+    box-shadow: var(--shadow), 0 0 0 4px var(--green-mid);
+    overflow: hidden;
+    animation: fadeUp .45s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(28px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 22px;
+    background: #b6f272;
+    border-bottom: 2px solid #8fde3c;
+  }
+
+  .topbar-dots { display:flex; gap:7px; }
+  .dot { width:16px; height:16px; border-radius:50%; }
+  .dot-blue  { background:#a0b4ff; }
+  .dot-yellow{ background:#f9e44a; }
+  .dot-red   { background:#f97373; }
+
+  .topbar-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--green-dark);
+    letter-spacing: .5px;
+  }
+
+  .topbar-logo {
+    width: 36px; height: 36px;
+    background: var(--green-dark);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  /* ── SCORE BAR ── */
+  .score-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 22px 0;
+    font-weight: 800;
+    font-size: .9rem;
+    color: var(--green-dark);
+  }
+
+  .score-val { font-size: 1.1rem; }
+
+  .progress-track {
+    flex: 1;
+    height: 8px;
+    background: #e0f5c0;
+    border-radius: 8px;
+    margin: 0 14px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-mid), var(--green-light));
+    border-radius: 8px;
+    transition: width .5s ease;
+  }
+
+  /* ── LEVEL SCREEN ── */
+  .level-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 30px;
+    gap: 16px;
+    animation: fadeUp .4s ease both;
+  }
+
+  .level-badge {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3.8rem;
+    letter-spacing: 1px;
+    text-shadow: 3px 4px 0 rgba(0,0,0,.12);
+    animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both;
+  }
+
+  @keyframes popIn {
+    from { transform: scale(.6); opacity:0; }
+    to   { transform: scale(1);  opacity:1; }
+  }
+
+  .level-badge.facil  { color: var(--green-dark); }
+  .level-badge.medio  { color: #d4900a; }
+  .level-badge.dificil{ color: var(--red); }
+
+  .level-pts {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--green-mid);
+    background: #e8fbd0;
+    padding: 6px 22px;
+    border-radius: 30px;
+  }
+
+  .btn-start {
+    margin-top: 10px;
+    background: var(--green-mid);
+    color: #fff;
+    border: none;
+    padding: 14px 40px;
+    border-radius: 50px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--green-dark);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn-start:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--green-dark); }
+  .btn-start:hover  { background: var(--green-dark); }
+
+  /* ── QUESTION SCREEN ── */
+  .question-screen { padding: 24px 28px 28px; animation: fadeUp .4s ease both; }
+
+  .question-tag {
+    font-family: 'Fredoka One', cursive;
+    font-size: .85rem;
+    color: #fff;
+    padding: 5px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  .tag-facil  { background: var(--green-mid); }
+  .tag-medio  { background: var(--orange); }
+  .tag-dificil{ background: var(--red); }
+
+  .question-box {
+    padding: 18px 22px;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #1a3a06;
+    line-height: 1.5;
+    margin-bottom: 22px;
+  }
+  .qbox-facil  { background: #c8ee90; }
+  .qbox-medio  { background: #fde9a0; }
+  .qbox-dificil{ background: #ffc2c2; }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .option-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #e9fbd2;
+    border: 2px solid #c3e88d;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: 'Nunito', sans-serif;
+    font-size: .92rem;
+    font-weight: 700;
+    color: var(--green-dark);
+    cursor: pointer;
+    text-align: left;
+    transition: transform .12s, background .15s, border-color .15s;
+    line-height: 1.35;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: #c8f078;
+    border-color: var(--green-mid);
+    transform: translateY(-2px);
+  }
+
+  .option-letter {
+    min-width: 28px; height: 28px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: .95rem;
+    color: var(--green-mid);
+    flex-shrink: 0;
+    border: 2px solid #b5e26a;
+    transition: background .15s;
+  }
+
+  .option-btn.correct {
+    background: #b6f272 !important;
+    border-color: var(--green-mid) !important;
+    animation: correctPop .35s ease;
+  }
+  .option-btn.correct .option-letter { background: var(--green-mid); color:#fff; }
+
+  .option-btn.wrong {
+    background: #ffcece !important;
+    border-color: var(--red) !important;
+  }
+  .option-btn.wrong .option-letter { background: var(--red); color:#fff; }
+
+  @keyframes correctPop {
+    0%  { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100%{ transform: scale(1); }
+  }
+
+  .option-btn:disabled { cursor: default; }
+
+  /* ── FEEDBACK ── */
+  .feedback {
+    margin-top: 16px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: .97rem;
+    display: none;
+    animation: fadeUp .3s ease both;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok   { background: #d6f5a0; color: var(--green-dark); }
+  .feedback.fail { background: #ffe0e0; color: #a00; }
+
+  .btn-next {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    background: var(--green-mid);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--green-dark);
+    transition: transform .12s, box-shadow .12s;
+    display: none;
+  }
+  .btn-next.show { display: block; }
+  .btn-next:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--green-dark); }
+
+  /* ── RESULT ── */
+  .result-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px 30px;
+    gap: 18px;
+    animation: fadeUp .5s ease both;
+    text-align: center;
+  }
+
+  .result-emoji { font-size: 4rem; animation: popIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+
+  .result-score {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3.2rem;
+    color: var(--green-dark);
+  }
+
+  .result-msg {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2a5c0d;
+    background: #d8fca0;
+    padding: 14px 28px;
+    border-radius: 16px;
+    max-width: 440px;
+  }
+
+  .btn-restart {
+    background: var(--green-mid);
+    color: #fff;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 50px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.15rem;
+    cursor: pointer;
+    box-shadow: 0 5px 0 var(--green-dark);
+    transition: transform .12s, box-shadow .12s;
+    margin-top: 6px;
+  }
+  .btn-restart:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--green-dark); }
+
+  /* ── SPLASH ── */
+  .splash {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px 30px 40px;
+    gap: 14px;
+    text-align: center;
+    animation: fadeUp .5s ease both;
+  }
+
+  .splash h1 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3rem;
+    color: var(--green-dark);
+    text-shadow: 3px 4px 0 rgba(0,0,0,.08);
+  }
+
+  .splash p {
+    color: #3a6e12;
+    font-size: 1rem;
+    font-weight: 600;
+    max-width: 380px;
+    line-height: 1.6;
+  }
+
+  .levels-preview {
+    display: flex;
+    gap: 18px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .lv-chip {
+    padding: 8px 22px;
+    border-radius: 30px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+  }
+  .lv-chip.f { background: #c8ee90; color: var(--green-dark); }
+  .lv-chip.m { background: #fde9a0; color: #a06000; }
+  .lv-chip.d { background: #ffc2c2; color: #8a0000; }
+
+  .mascot { font-size: 5rem; animation: float 3s ease-in-out infinite; }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+
+  @media (max-width: 540px) {
+    .options-grid { grid-template-columns: 1fr; }
+    .level-badge  { font-size: 2.8rem; }
+    .splash h1    { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="quiz-wrapper">
+  <div class="card" id="card">
+    <!-- topbar always visible -->
+    <div class="topbar">
+      <div class="topbar-dots">
+        <div class="dot dot-blue"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-red"></div>
+      </div>
+      <span class="topbar-title" id="topbarTitle">QuizzVerde</span>
+      <div class="topbar-logo">🌿</div>
+    </div>
+
+    <!-- score bar (hidden on splash/level/result) -->
+    <div class="score-bar" id="scoreBar" style="display:none">
+      <span>Pergunta <span id="qNum">1</span>/9</span>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      <span class="score-val">⭐ <span id="scoreDisplay">0</span></span>
+    </div>
+
+    <!-- dynamic content injected here -->
+    <div id="content"></div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  // FÁCIL (+1)
+  {
+    level: 'facil', pts: 1, num: 1,
+    text: 'O impacto causado pela poluição ambiental: Qual das alternativas é um exemplo?',
+    options: [
+      'A destruição do ecossistema',
+      'O desemprego estrutural',
+      'Corrupção e os conflitos armados',
+      'A intolerância religiosa'
+    ],
+    correct: 0
+  },
+  {
+    level: 'facil', pts: 1, num: 2,
+    text: 'Um exemplo de prática sustentável é:',
+    options: [
+      'Reutilizar sacolas que já foram usadas nas compras',
+      'Jogar o papel da bala no chão',
+      'Jogar um material/lixo reciclável no lixo comum',
+      'Queimar lixos acumulados'
+    ],
+    correct: 0
+  },
+  {
+    level: 'facil', pts: 1, num: 3,
+    text: 'A forma mais sustentável de lidar com recursos essenciais, como água e energia é:',
+    options: ['Reciclando', 'Recusando', 'Reduzindo', 'Reutilizando'],
+    correct: 2
+  },
+  // MÉDIO (+2)
+  {
+    level: 'medio', pts: 2, num: 4,
+    text: 'No ramo da sustentabilidade existe um conjunto de 5Rs focados na diminuição do impacto ambiental: Repensar, Recuzar, Reduzir… Quais são os outros dois?',
+    options: [
+      'Retratar e Reutilizar',
+      'Receber e Reciclar',
+      'Reutilizar e Reciclar',
+      'Renovar e Reciclar'
+    ],
+    correct: 2
+  },
+  {
+    level: 'medio', pts: 2, num: 5,
+    text: 'Qual dessas alternativas NÃO representa um pilar da sustentabilidade?',
+    options: [
+      'Pilar ambiental: preservação e uso racional dos recursos',
+      'Social: qualidade de vida e equidade',
+      'Judicial: cumprir leis e direitos',
+      'Econômico: negócios viáveis e sustentáveis'
+    ],
+    correct: 2
+  },
+  {
+    level: 'medio', pts: 2, num: 6,
+    text: 'Qual fonte de energia é a mais poluente?',
+    options: [
+      'Petróleo e Derivados',
+      'Carvão Vegetal/Lenha',
+      'Carvão Mineral',
+      'Energia Nuclear'
+    ],
+    correct: 2
+  },
+  // DIFÍCIL (+3)
+  {
+    level: 'dificil', pts: 3, num: 7,
+    text: 'Qual prática reduz a emissão de gases poluentes e é uma afirmação verdadeira?',
+    options: [
+      'Andar mais de moto',
+      'Usar Transporte Coletivo',
+      'Queimar Lixo',
+      'Uso de combustíveis fósseis'
+    ],
+    correct: 1
+  },
+  {
+    level: 'dificil', pts: 3, num: 8,
+    text: 'Qual o principal desafio do século XXI sobre o desenvolvimento sustentável?',
+    options: [
+      'Conciliar o crescimento econômico com a preservação dos recursos naturais',
+      'Substituir totalmente a energia vinda dos combustíveis fósseis',
+      'Apenas diminuir a quantidade de liberação de gases poluentes',
+      'Se desenvolver economicamente sem considerar os impactos ambientais'
+    ],
+    correct: 0
+  },
+  {
+    level: 'dificil', pts: 3, num: 9,
+    text: 'Qual das alternativas abaixo descreve corretamente o aquecimento global?',
+    options: [
+      'É causado apenas por fatores naturais, como erupções vulcânicas',
+      'Resulta do aumento de gases do efeito estufa na atmosfera',
+      'Ocorre devido à diminuição da camada de ozônio',
+      'É provocado exclusivamente pelo aumento da radiação solar'
+    ],
+    correct: 1
+  }
+];
+
+const levelOrder = ['facil','medio','dificil'];
+const levelNames = { facil:'Nível Fácil', medio:'Nível Médio', dificil:'Nível Difícil' };
+const levelColors = { facil:'#5aaa1e', medio:'#f7a832', dificil:'#f23c3c' };
+
+let currentQ = 0;
+let score = 0;
+let phase = 'splash'; // splash | level | question | result
+let pendingLevel = null;
+
+const content = document.getElementById('content');
+const scoreBar = document.getElementById('scoreBar');
+const qNum = document.getElementById('qNum');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const progressFill = document.getElementById('progressFill');
+const topbarTitle = document.getElementById('topbarTitle');
+
+function render() {
+  if (phase === 'splash') renderSplash();
+  else if (phase === 'level') renderLevel(pendingLevel);
+  else if (phase === 'question') renderQuestion();
+  else if (phase === 'result') renderResult();
+}
+
+function renderSplash() {
+  topbarTitle.textContent = 'QuizzVerde';
+  scoreBar.style.display = 'none';
+  content.innerHTML = `
+    <div class="splash">
+      <div class="mascot">🤖</div>
+      <h1>QuizzVerde</h1>
+      <p>Responda perguntas sobre <strong>Sustentabilidade e Meio Ambiente</strong> em 3 níveis de dificuldade!</p>
+      <div class="levels-preview">
+        <div class="lv-chip f">🟢 Fácil &nbsp;+1</div>
+        <div class="lv-chip m">🟡 Médio &nbsp;+2</div>
+        <div class="lv-chip d">🔴 Difícil +3</div>
+      </div>
+      <button class="btn-start" onclick="startQuiz()">Começar! 🌿</button>
+    </div>`;
+}
+
+function startQuiz() {
+  currentQ = 0; score = 0;
+  scoreDisplay.textContent = '0';
+  phase = 'level';
+  pendingLevel = 'facil';
+  render();
+}
+
+function renderLevel(lv) {
+  topbarTitle.textContent = levelNames[lv];
+  scoreBar.style.display = 'none';
+  const icons = { facil:'🌱', medio:'🌍', dificil:'🔥' };
+  const cls = lv;
+  const pts = lv === 'facil' ? '+1 ponto' : lv === 'medio' ? '+2 pontos' : '+3 pontos';
+  content.innerHTML = `
+    <div class="level-screen">
+      <div class="level-badge ${cls}">${icons[lv]} ${levelNames[lv]}</div>
+      <div class="level-pts">${pts} por acerto</div>
+      <button class="btn-start" onclick="enterQuestions()" style="background:${levelColors[lv]}">Vamos lá!</button>
+    </div>`;
+}
+
+function enterQuestions() {
+  phase = 'question';
+  scoreBar.style.display = 'flex';
+  render();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  topbarTitle.textContent = `Pergunta ${q.num}`;
+  qNum.textContent = q.num;
+  progressFill.style.width = ((currentQ / 9) * 100) + '%';
+  const letters = ['A','B','C','D'];
+  const tag = `tag-${q.level}`;
+  const qbox = `qbox-${q.level}`;
+  const opts = q.options.map((o,i) => `
+    <button class="option-btn" id="opt${i}" onclick="answer(${i})">
+      <span class="option-letter">${letters[i]}</span>${o}
+    </button>`).join('');
+  content.innerHTML = `
+    <div class="question-screen">
+      <span class="question-tag ${tag}">${levelNames[q.level]} · ${q.pts}pt${q.pts>1?'s':''}</span>
+      <div class="question-box ${qbox}">${q.text}</div>
+      <div class="options-grid">${opts}</div>
+      <div class="feedback" id="feedback"></div>
+      <button class="btn-next" id="btnNext" onclick="next()">Próxima ➜</button>
+    </div>`;
+}
+
+function answer(idx) {
+  const q = questions[currentQ];
+  const buttons = document.querySelectorAll('.option-btn');
+  buttons.forEach(b => b.disabled = true);
+  const feedback = document.getElementById('feedback');
+  const btnNext = document.getElementById('btnNext');
+
+  if (idx === q.correct) {
+    buttons[idx].classList.add('correct');
+    score += q.pts;
+    scoreDisplay.textContent = score;
+    feedback.textContent = '✅ Correto! Muito bem!';
+    feedback.className = 'feedback ok show';
+  } else {
+    buttons[idx].classList.add('wrong');
+    buttons[q.correct].classList.add('correct');
+    const letters = ['A','B','C','D'];
+    feedback.textContent = `❌ Incorreto! A resposta certa era ${letters[q.correct]}.`;
+    feedback.className = 'feedback fail show';
+  }
+  btnNext.className = 'btn-next show';
+}
+
+function next() {
+  currentQ++;
+  if (currentQ >= questions.length) {
+    phase = 'result';
+    scoreBar.style.display = 'none';
+    render();
+    return;
+  }
+  // check level transition
+  const prev = questions[currentQ - 1].level;
+  const curr = questions[currentQ].level;
+  if (curr !== prev) {
+    phase = 'level';
+    pendingLevel = curr;
+    render();
+  } else {
+    renderQuestion();
+  }
+}
+
+function renderResult() {
+  topbarTitle.textContent = 'Pontuação Final';
+  progressFill.style.width = '100%';
+  let emoji, msg;
+  if (score <= 7)       { emoji = '🌱'; msg = 'Entre 3 a 7 pontos: Vamos aprender mais! O planeta precisa de você!'; }
+  else if (score <= 12) { emoji = '🌍'; msg = 'Entre 8 e 12 pontos: Mandou bem, o planeta e o futuro agradecem!'; }
+  else                  { emoji = '🏆'; msg = 'Entre 13 e 18 pontos: Bravo, a Sustentabilidade está no sangue!'; }
+
+  const max = 18;
+  content.innerHTML = `
+    <div class="result-screen">
+      <div class="result-emoji">${emoji}</div>
+      <div style="font-family:'Fredoka One',cursive;font-size:1.1rem;color:#3a6e12;">Sua pontuação</div>
+      <div class="result-score">${score} / ${max}</div>
+      <div class="result-msg">${msg}</div>
+      <button class="btn-restart" onclick="startQuiz()">🔄 Jogar Novamente</button>
+      <small style="color:#5a8c2a;font-weight:600;margin-top:4px">Projeto Crisoverde</small>
+    </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
